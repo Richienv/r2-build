@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ProjectStatus {
+  BUILDING
+  STUCK
+  WAITING
+  PAUSED
+  DONE
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  name         String
+  fullName     String
+  color        String
+  currentPhase String
+  status       ProjectStatus @default(BUILDING)
+  streak       Int           @default(0)
+  startDate    String
+  targetDate   String?
+  cofounder    String?
+  order        Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  focuses    DailyFocus[]
+  milestones Milestone[]
+  blockers   Blocker[]
+}
+
+model DailyFocus {
+  id          String    @id @default(cuid())
+  projectId   String
+  date        String
+  task        String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, date])
+  @@index([date])
+}
+
+model Milestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  title       String
+  targetDate  String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Blocker {
+  id          String   @id @default(cuid())
+  projectId   String
+  description String
+  reason      String
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
