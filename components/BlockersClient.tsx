@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { R2OSLink } from "./R2OSLink";
 
 type Blocker = {
   id: string;
@@ -57,11 +58,12 @@ export function BlockersClient({ blockers, projects, hasOpenBlockers }: Props) {
 
   return (
     <>
-      <header className="shrink-0 flex items-center px-4"
+      <header className="shrink-0 flex items-center justify-between px-4"
         style={{ height: 56, borderBottom: "0.5px solid #2A2A2A" }}>
         <h1 className="font-impact text-[32px] leading-none tracking-wider" style={{ color: "#F0F0F0" }}>
           BLOCKERS
         </h1>
+        <R2OSLink />
       </header>
 
       {!hasOpenBlockers && !showAdd ? (
@@ -128,7 +130,10 @@ export function BlockersClient({ blockers, projects, hasOpenBlockers }: Props) {
         <div className="fixed inset-0 flex items-end" style={{ background: "#08080899", zIndex: 50 }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowAdd(false); }}>
           <div className="w-full p-4 space-y-3" style={{ background: "#111111", borderTop: "0.5px solid #2A2A2A" }}>
-            <div className="w-10 h-0.5 mx-auto mb-2" style={{ background: "#2A2A2A" }} />
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-0.5" style={{ background: "#2A2A2A" }} />
+              <R2OSLink />
+            </div>
 
             <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
               className="w-full px-3 py-2 font-mono text-[12px]"

@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ProjectCard } from "./ProjectCard";
 import { Celebration } from "./Celebration";
+import { R2OSLink } from "./R2OSLink";
 
 type Project = {
   id: string;
@@ -49,6 +50,7 @@ export function HomeClient({ projects, maxStreak }: { projects: Project[]; maxSt
         <span className="font-impact text-[20px] tracking-wider" style={{ color: "#F0F0F0" }}>
           R2·BUILD
         </span>
+        <R2OSLink />
         <span className="font-mono text-[10px] tracking-wider"
           style={{ color: maxStreak > 0 ? "#F0F0F0" : "#444444" }}>
           🔥 {maxStreak} DAY STREAK

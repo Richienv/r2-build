@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatMilestoneDate, daysUntil } from "@/lib/date";
+import { R2OSLink } from "./R2OSLink";
 
 type Project = {
   id: string;
@@ -30,7 +31,10 @@ export function ProjectDetailClient({ project }: { project: Project }) {
       <header className="shrink-0 px-4 pt-4 pb-3" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
         <div className="flex items-center justify-between mb-2">
           <Link href="/" className="font-mono text-[12px] btn-press" style={{ color: "#444444" }}>←</Link>
-          <span className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>{project.status}</span>
+          <div className="flex items-center gap-2">
+            <R2OSLink />
+            <span className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>{project.status}</span>
+          </div>
         </div>
         <h1 className="font-impact text-[48px] leading-none tracking-wider" style={{ color: "#F0F0F0" }}>
           {project.name}
