@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { daysUntil, monthYear } from "@/lib/date";
-import { R2OSLink } from "./R2OSLink";
 
 type Milestone = {
   id: string;
@@ -69,7 +68,6 @@ export function MilestonesClient({
         <h1 className="font-impact text-[32px] leading-none tracking-wider" style={{ color: "#F0F0F0" }}>
           MILESTONES
         </h1>
-        <R2OSLink />
       </header>
 
       <section className="flex-1 overflow-y-auto no-scrollbar">

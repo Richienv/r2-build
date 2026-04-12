@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { R2OSLink } from "./R2OSLink";
 
 type Project = {
   id: string;
@@ -68,7 +67,6 @@ export function HomeClient({
         <span className="font-impact text-[20px] tracking-wider" style={{ color: "#F0F0F0" }}>
           R2·BUILD
         </span>
-        <R2OSLink />
         <span className="font-mono text-[10px] tracking-wider" style={{ color: "#444" }}>
           🔥 {maxStreak} DAY STREAK
         </span>

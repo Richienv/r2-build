@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { R2OSLink } from "./R2OSLink";
 
 type Focus = {
   id: string;
@@ -48,7 +47,6 @@ export function TasksClient({ focuses, projects, today, weekDone, weekTotal, wee
         <h1 className="font-impact text-[32px] leading-none tracking-wider" style={{ color: "#F0F0F0" }}>
           TASK LOG
         </h1>
-        <R2OSLink />
       </header>
 
       {/* Filter */}
