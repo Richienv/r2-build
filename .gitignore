@@ -10,3 +10,5 @@ dist
 *.log
 next-env.d.ts
 /prisma/migrations
+.env
+.env.local
