@@ -11,8 +11,6 @@ export default async function MilestonesPage() {
   });
 
   const projects = await prisma.project.findMany({ orderBy: { order: "asc" } });
-  const hasOpenBlockers = (await prisma.blocker.count({ where: { resolved: false } })) > 0;
-
   return (
     <main className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "#080808" }}>
       <MilestonesClient
@@ -25,7 +23,7 @@ export default async function MilestonesPage() {
         }))}
         projects={projects.map((p) => ({ id: p.id, name: p.name, color: p.color }))}
       />
-      <BottomNav hasOpenBlockers={hasOpenBlockers} />
+      <BottomNav />
     </main>
   );
 }

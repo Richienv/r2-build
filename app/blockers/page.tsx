@@ -27,7 +27,7 @@ export default async function BlockersPage() {
         projects={projects.map((p) => ({ id: p.id, name: p.name, color: p.color }))}
         hasOpenBlockers={hasOpenBlockers}
       />
-      <BottomNav hasOpenBlockers={hasOpenBlockers} />
+      <BottomNav />
     </main>
   );
 }

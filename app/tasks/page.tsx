@@ -14,8 +14,6 @@ export default async function TasksPage() {
   });
 
   const projects = await prisma.project.findMany({ orderBy: { order: "asc" } });
-  const hasOpenBlockers = (await prisma.blocker.count({ where: { resolved: false } })) > 0;
-
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
   const weekStr = weekAgo.toISOString().slice(0, 10);
@@ -39,7 +37,7 @@ export default async function TasksPage() {
         weekTotal={weekFocuses.length}
         weekPct={pct}
       />
-      <BottomNav hasOpenBlockers={hasOpenBlockers} />
+      <BottomNav />
     </main>
   );
 }

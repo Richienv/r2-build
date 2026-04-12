@@ -23,7 +23,6 @@ export default async function ProjectDetail({
   });
 
   if (!project) notFound();
-  const hasOpenBlockers = (await prisma.blocker.count({ where: { resolved: false } })) > 0;
   const todayFocus = project.focuses.find((f) => f.date === today) ?? null;
 
   return (
@@ -61,7 +60,7 @@ export default async function ProjectDetail({
           })),
         }}
       />
-      <BottomNav hasOpenBlockers={hasOpenBlockers} />
+      <BottomNav />
     </main>
   );
 }

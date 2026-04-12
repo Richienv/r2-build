@@ -16,11 +16,9 @@ export default async function HomePage() {
         orderBy: { targetDate: "asc" },
         take: 1,
       },
-      blockers: { where: { resolved: false } },
     },
   });
 
-  const hasOpenBlockers = projects.some((p) => p.blockers.length > 0);
   const maxStreak = Math.max(0, ...projects.map((p) => p.streak));
 
   return (
@@ -39,7 +37,7 @@ export default async function HomePage() {
         }))}
         maxStreak={maxStreak}
       />
-      <BottomNav hasOpenBlockers={hasOpenBlockers} />
+      <BottomNav />
     </main>
   );
 }
