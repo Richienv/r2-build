@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatMilestoneDate } from "@/lib/date";
@@ -16,52 +16,18 @@ type Project = {
   milestones: { id: string; title: string; targetDate: string }[];
 };
 
-export function ProjectCard({
-  project,
-  onAllDone,
-}: {
-  project: Project;
-  onAllDone?: () => void;
-}) {
+export function ProjectCard({ project, onDone }: { project: Project; onDone?: () => void }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const focus = project.focuses[0];
   const milestone = project.milestones[0];
   const [localDone, setLocalDone] = useState(focus?.completed ?? false);
-  const [showCheck, setShowCheck] = useState(focus?.completed ?? false);
-
-  const touchStartX = useRef(0);
-  const [swipeX, setSwipeX] = useState(0);
-  const [swipeAction, setSwipeAction] = useState<"none" | "stuck" | "edit">("none");
-
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX;
-  }
-
-  function handleTouchMove(e: React.TouchEvent) {
-    const dx = e.touches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 20) {
-      setSwipeX(Math.max(-120, Math.min(120, dx)));
-      setSwipeAction(dx < -40 ? "stuck" : dx > 40 ? "edit" : "none");
-    }
-  }
-
-  function handleTouchEnd() {
-    setSwipeX(0);
-    if (swipeAction === "stuck") {
-      window.location.href = `/project/${project.id}?tab=blockers&add=true`;
-    } else if (swipeAction === "edit") {
-      window.location.href = `/project/${project.id}?tab=focus`;
-    }
-    setSwipeAction("none");
-  }
 
   function markDone(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (!focus || localDone || pending) return;
     setLocalDone(true);
-    setTimeout(() => setShowCheck(true), 150);
     startTransition(async () => {
       await fetch("/api/focus", {
         method: "PATCH",
@@ -69,125 +35,82 @@ export function ProjectCard({
         body: JSON.stringify({ id: focus.id, completed: true }),
       });
       router.refresh();
-      onAllDone?.();
+      onDone?.();
     });
   }
 
-  const statusColor =
-    project.status === "STUCK" ? "#FF4747" :
-    project.status === "WAITING" ? "#888888" :
-    project.status === "DONE" ? "#47FFB8" : project.color;
-
   return (
-    <div className="relative mx-4 mb-3"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}>
+    <Link href={`/project/${project.id}`}
+      className="block"
+      style={{
+        background: "#111111",
+        borderBottom: "1px solid #080808",
+        borderLeft: `3px solid ${localDone ? "#F0F0F020" : "#F0F0F0"}`,
+        padding: "20px 16px",
+      }}>
 
-      {/* Swipe action backgrounds */}
-      {swipeX < -20 && (
-        <div className="absolute inset-0 rounded-xl flex items-center justify-end px-6 bg-stuck/20">
-          <span className="font-mono text-xs tracking-[3px] text-stuck">MARK STUCK</span>
-        </div>
-      )}
-      {swipeX > 20 && (
-        <div className="absolute inset-0 rounded-xl flex items-center px-6 bg-white/5">
-          <span className="font-mono text-xs tracking-[3px] text-white/60">EDIT TASK</span>
-        </div>
-      )}
+      {/* Row 1: name + status */}
+      <div className="flex items-center justify-between" style={{ height: 28 }}>
+        <span className="font-impact text-[18px] tracking-wide" style={{ color: "#F0F0F0" }}>
+          {project.name}
+        </span>
+        <span className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>
+          {project.status}
+        </span>
+      </div>
 
-      <Link href={`/project/${project.id}`}
-        className="swipe-card block relative rounded-xl p-6"
-        style={{
-          background: "#111111",
-          border: "0.5px solid #2A2A2A",
-          borderLeftWidth: 4,
-          borderLeftColor: localDone ? "#47FFB8" : project.color,
-          transform: `translateX(${swipeX}px)`,
-        }}>
+      <div className="my-2" style={{ height: "0.5px", background: "#2A2A2A" }} />
 
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="font-impact text-[28px] leading-none tracking-wide">{project.name}</span>
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: project.color }} />
-            <span className="w-8 h-px" style={{ backgroundColor: "#2A2A2A" }} />
-          </div>
-          <span className="font-mono text-[10px] tracking-[3px]" style={{ color: statusColor }}>
-            {project.status}
-          </span>
-        </div>
+      {/* Row 2: label */}
+      <p className="font-mono text-[8px] tracking-[3px] mb-1" style={{ color: "#444444" }}>
+        TODAY&apos;S ONE THING:
+      </p>
 
-        <div className="h-px mb-4" style={{ background: "#2A2A2A" }} />
-
-        {/* Today's one thing */}
-        <p className="font-mono text-[10px] tracking-[3px] mb-2" style={{ color: "#555" }}>
-          TODAY&apos;S ONE THING:
+      {/* Row 3: task */}
+      {focus ? (
+        <p className={`font-impact leading-[0.95] my-3 ${localDone ? "strike-anim" : ""}`}
+          style={{ fontSize: 28, color: localDone ? "#444444" : "#F0F0F0" }}>
+          {focus.task.toUpperCase()}.
         </p>
-        {focus ? (
-          <p className={`font-impact leading-[0.88] mb-5 relative ${localDone ? "strike-anim" : ""}`}
-            style={{
-              fontSize: "36px",
-              color: localDone ? "#555" : project.color,
-            }}>
-            {focus.task.toUpperCase()}.
-          </p>
-        ) : (
-          <p className="font-impact text-[36px] leading-[0.88] mb-5" style={{ color: "#333" }}>
-            NO TASK SET.
-          </p>
+      ) : (
+        <p className="font-impact text-[28px] leading-[0.95] my-3" style={{ color: "#2A2A2A" }}>
+          NO TASK SET.
+        </p>
+      )}
+
+      {/* Row 4: meta */}
+      <div className="my-2" style={{ height: "0.5px", background: "#2A2A2A" }} />
+      <div className="flex items-center justify-between" style={{ height: 24 }}>
+        <span className="font-mono text-[9px] tracking-wider truncate pr-4" style={{ color: "#444444" }}>
+          {project.currentPhase}
+        </span>
+        {milestone && (
+          <span className="font-mono text-[9px] tracking-wider shrink-0" style={{ color: "#444444" }}>
+            {formatMilestoneDate(milestone.targetDate)} NEXT
+          </span>
         )}
+      </div>
 
-        <div className="h-px mb-4" style={{ background: "#2A2A2A" }} />
+      {/* Row 5: streak */}
+      <div className="mt-2 mb-3" style={{ height: 24 }}>
+        <span className="font-mono text-[10px] tracking-wider"
+          style={{ color: project.streak > 0 ? "#F0F0F0" : "#444444" }}>
+          🔥 {localDone && !focus?.completed ? project.streak + 1 : project.streak} DAY{project.streak === 1 && !localDone ? "" : "S"}
+        </span>
+      </div>
 
-        {/* Phase + milestone */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="font-mono text-[11px] text-[#555] tracking-wider truncate pr-4">
-            {project.currentPhase}
-          </span>
-          {milestone && (
-            <span className="font-mono text-[11px] text-[#555] tracking-wider shrink-0">
-              {formatMilestoneDate(milestone.targetDate)} next
-            </span>
-          )}
-        </div>
-
-        {/* Streak bar */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "#1A1A1A" }}>
-            <div className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${Math.min(100, (project.streak / 7) * 100)}%`,
-                backgroundColor: project.color,
-              }} />
-          </div>
-          <span className={`font-mono text-[11px] tracking-wider ${showCheck ? "number-roll" : ""}`}
-            style={{ color: project.streak >= 7 ? project.color : "#555" }}>
-            🔥 {localDone ? project.streak + 1 : project.streak} DAY{project.streak === 1 && !localDone ? "" : "S"}
-          </span>
-        </div>
-
-        {/* Done button */}
-        <button onClick={markDone}
-          disabled={localDone || pending || !focus}
-          className="w-full h-[52px] rounded-lg font-impact text-[20px] tracking-[4px] btn-press transition-all duration-200"
-          style={{
-            background: localDone ? "#47FFB8" : `${project.color}15`,
-            border: `1px solid ${localDone ? "#47FFB8" : project.color}${localDone ? "" : "66"}`,
-            color: localDone ? "#080808" : project.color,
-          }}>
-          {localDone ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <path d="M5 13l4 4L19 7" className={showCheck ? "draw-check" : ""} />
-              </svg>
-              DONE
-            </span>
-          ) : (
-            "DONE ✓"
-          )}
-        </button>
-      </Link>
-    </div>
+      {/* Row 6: done button */}
+      <button onClick={markDone}
+        disabled={localDone || pending || !focus}
+        className="w-full btn-press font-impact text-[16px] tracking-[4px]"
+        style={{
+          height: 48,
+          background: localDone ? "#F0F0F010" : "transparent",
+          border: "0.5px solid #2A2A2A",
+          color: localDone ? "#F0F0F030" : "#444444",
+        }}>
+        {localDone ? "✓ DONE" : "DONE ✓"}
+      </button>
+    </Link>
   );
 }

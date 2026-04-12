@@ -1,8 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { daysUntil, monthYear, formatMilestoneDate } from "@/lib/date";
+import { daysUntil, monthYear } from "@/lib/date";
 
 type Milestone = {
   id: string;
@@ -14,12 +14,17 @@ type Milestone = {
 
 export function MilestonesClient({
   milestones,
+  projects,
 }: {
   milestones: Milestone[];
   projects: { id: string; name: string; color: string }[];
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
+  const [showAdd, setShowAdd] = useState(false);
+  const [title, setTitle] = useState("");
+  const [target, setTarget] = useState("");
+  const [selectedProject, setSelectedProject] = useState(projects[0]?.id ?? "");
 
   function toggle(id: string, completed: boolean) {
     startTransition(async () => {
@@ -32,7 +37,24 @@ export function MilestonesClient({
     });
   }
 
+  function add() {
+    if (!title || !target || !selectedProject) return;
+    startTransition(async () => {
+      await fetch("/api/milestones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProject, title, targetDate: target }),
+      });
+      setTitle("");
+      setTarget("");
+      setShowAdd(false);
+      router.refresh();
+    });
+  }
+
   const open = milestones.filter((m) => !m.completed);
+  const completed = milestones.filter((m) => m.completed);
+
   const grouped = open.reduce<Record<string, Milestone[]>>((acc, m) => {
     const key = monthYear(m.targetDate);
     (acc[key] ??= []).push(m);
@@ -41,75 +63,96 @@ export function MilestonesClient({
 
   return (
     <>
-      <header className="shrink-0 px-5 pt-6 pb-4" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
-        <h1 className="font-impact text-[42px] leading-none tracking-wider text-white">MILESTONES</h1>
-        <p className="font-mono text-[10px] tracking-[3px] text-[#555] mt-2">
-          {open.length} UPCOMING
-        </p>
+      <header className="shrink-0 flex items-center px-4"
+        style={{ height: 56, borderBottom: "0.5px solid #2A2A2A" }}>
+        <h1 className="font-impact text-[32px] leading-none tracking-wider" style={{ color: "#F0F0F0" }}>
+          MILESTONES
+        </h1>
       </header>
 
       <section className="flex-1 overflow-y-auto no-scrollbar">
         {Object.entries(grouped).map(([month, items]) => (
           <div key={month}>
-            <div className="px-5 py-3 sticky top-0" style={{ background: "#080808", borderBottom: "0.5px solid #2A2A2A" }}>
-              <span className="font-mono text-[10px] tracking-[3px] text-[#555]">── {month} ──</span>
+            <div className="px-4 py-2" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
+              <span className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>{month}</span>
             </div>
-            <div className="space-y-3 p-4">
-              {items.map((m) => {
-                const days = daysUntil(m.targetDate);
-                return (
-                  <div key={m.id} className="rounded-xl p-5"
-                    style={{ background: "#111111", border: "0.5px solid #2A2A2A" }}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="w-2 h-2 rounded-full" style={{ background: m.project.color }} />
-                      <span className="font-mono text-[10px] tracking-[3px]" style={{ color: m.project.color }}>
-                        {m.project.name}
-                      </span>
-                      <span className="flex-1" />
-                      <span className="font-mono text-[11px] text-[#555] tracking-wider">
-                        {formatMilestoneDate(m.targetDate)}
-                      </span>
-                    </div>
-                    <p className="font-impact text-[20px] tracking-wide text-white mb-2">
+            {items.map((m) => {
+              const d = daysUntil(m.targetDate);
+              const day = parseInt(m.targetDate.split("-")[2], 10);
+              const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+              const mon = months[parseInt(m.targetDate.split("-")[1], 10) - 1];
+              return (
+                <button key={m.id} onClick={() => toggle(m.id, true)}
+                  disabled={pending}
+                  className="w-full flex items-center px-4 text-left btn-press"
+                  style={{ height: 64, borderBottom: "0.5px solid #2A2A2A" }}>
+                  <div className="shrink-0" style={{ width: 60 }}>
+                    <p className="font-impact text-[20px] leading-none" style={{ color: "#F0F0F0" }}>{day}</p>
+                    <p className="font-mono text-[9px] tracking-wider" style={{ color: "#444444" }}>{mon}</p>
+                  </div>
+                  <div className="flex-1 min-w-0 px-2">
+                    <p className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>{m.project.name}</p>
+                    <p className="font-impact text-[16px] tracking-wider truncate" style={{ color: "#F0F0F0" }}>
                       {m.title.toUpperCase()}
                     </p>
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] text-[#555] tracking-wider">
-                        {days > 0 ? `${days} DAYS` : days === 0 ? "TODAY" : `${-days} DAYS OVERDUE`}
-                      </span>
-                      <button onClick={() => toggle(m.id, true)}
-                        className="font-mono text-[10px] tracking-[3px] px-3 py-1.5 rounded btn-press"
-                        style={{ border: `1px solid ${m.project.color}40`, color: m.project.color }}>
-                        COMPLETE ✓
-                      </button>
-                    </div>
                   </div>
-                );
-              })}
-            </div>
+                  <span className="font-mono text-[9px] tracking-wider shrink-0" style={{ color: "#444444" }}>
+                    {d > 0 ? `${d}D` : d === 0 ? "TODAY" : `${-d}D LATE`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         ))}
 
-        {milestones.filter((m) => m.completed).length > 0 && (
-          <div className="px-5 py-3">
-            <span className="font-mono text-[10px] tracking-[3px] text-[#333]">── COMPLETED ──</span>
-            {milestones.filter((m) => m.completed).map((m) => (
-              <div key={m.id} className="flex items-center gap-3 py-3 opacity-40"
-                style={{ borderBottom: "0.5px solid #1A1A1A" }}>
-                <span className="w-2 h-2 rounded-full" style={{ background: "#47FFB8" }} />
-                <span className="text-sm flex-1 line-through text-[#555]">{m.title}</span>
-                <span className="font-mono text-[10px] text-[#333]">{formatMilestoneDate(m.targetDate)}</span>
+        {completed.length > 0 && (
+          <div>
+            <div className="px-4 py-2" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
+              <span className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>COMPLETED</span>
+            </div>
+            {completed.map((m) => (
+              <div key={m.id} className="flex items-center px-4"
+                style={{ height: 52, borderBottom: "0.5px solid #2A2A2A", opacity: 0.3 }}>
+                <span className="font-mono text-[9px] shrink-0" style={{ width: 60, color: "#444444" }}>
+                  {m.targetDate.split("-")[2]} {["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"][parseInt(m.targetDate.split("-")[1],10)-1]}
+                </span>
+                <span className="font-impact text-[14px] tracking-wider line-through flex-1" style={{ color: "#444444" }}>
+                  {m.title.toUpperCase()}
+                </span>
               </div>
             ))}
           </div>
         )}
 
-        {milestones.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center px-6 text-center">
-            <p className="font-impact text-[42px] leading-[0.9] text-white">
-              NO MILESTONES.<br />WHERE ARE YOU<br />GOING?
-            </p>
+        {/* Add milestone */}
+        {showAdd ? (
+          <div className="p-4 space-y-3" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
+            <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
+              className="w-full px-3 py-2 font-mono text-[12px]"
+              style={{ background: "#111111", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }}>
+              {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Milestone title"
+              className="w-full px-3 py-2 font-mono text-[13px] placeholder-[#2A2A2A]"
+              style={{ background: "#111111", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
+            <input type="date" value={target} onChange={(e) => setTarget(e.target.value)}
+              className="w-full px-3 py-2 font-mono text-[13px]"
+              style={{ background: "#111111", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
+            <div className="flex gap-2">
+              <button onClick={add} disabled={pending}
+                className="font-impact text-[14px] tracking-[3px] px-4 btn-press"
+                style={{ height: 40, background: "#F0F0F0", color: "#080808" }}>SAVE</button>
+              <button onClick={() => setShowAdd(false)}
+                className="font-impact text-[14px] tracking-[3px] px-4 btn-press"
+                style={{ height: 40, border: "0.5px solid #2A2A2A", color: "#444444" }}>CANCEL</button>
+            </div>
           </div>
+        ) : (
+          <button onClick={() => setShowAdd(true)}
+            className="w-full font-impact text-[14px] tracking-[3px] btn-press"
+            style={{ height: 48, border: "0.5px solid #2A2A2A", color: "#444444" }}>
+            + ADD MILESTONE
+          </button>
         )}
       </section>
     </>

@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { StatusPill } from "./StatusPill";
 import { formatMilestoneDate, daysUntil } from "@/lib/date";
 
 type Project = {
@@ -27,23 +26,25 @@ export function ProjectDetailClient({ project }: { project: Project }) {
 
   return (
     <>
-      <header className="shrink-0 px-5 pt-5 pb-4" style={{ borderBottom: `1px solid ${project.color}30` }}>
-        <div className="flex items-center justify-between mb-3">
-          <Link href="/" className="font-mono text-sm text-[#555] hover:text-white btn-press">←</Link>
-          <StatusPill status={project.status as any} color={project.color} />
+      {/* Header */}
+      <header className="shrink-0 px-4 pt-4 pb-3" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
+        <div className="flex items-center justify-between mb-2">
+          <Link href="/" className="font-mono text-[12px] btn-press" style={{ color: "#444444" }}>←</Link>
+          <span className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>{project.status}</span>
         </div>
-        <h1 className="font-impact text-[48px] leading-none tracking-wider" style={{ color: project.color }}>
+        <h1 className="font-impact text-[48px] leading-none tracking-wider" style={{ color: "#F0F0F0" }}>
           {project.name}
         </h1>
       </header>
 
-      <nav className="shrink-0 flex overflow-x-auto no-scrollbar" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
+      {/* Tabs */}
+      <nav className="shrink-0 flex" style={{ borderBottom: "0.5px solid #2A2A2A" }}>
         {(["FOCUS", "MILESTONES", "BLOCKERS", "LOG"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className="px-5 py-3 font-mono text-[10px] tracking-[3px] whitespace-nowrap btn-press"
+            className="flex-1 py-3 font-mono text-[9px] tracking-[3px] btn-press"
             style={{
-              color: tab === t ? project.color : "#333",
-              borderBottom: tab === t ? `2px solid ${project.color}` : "2px solid transparent",
+              color: tab === t ? "#F0F0F0" : "#444444",
+              borderBottom: tab === t ? "1px solid #F0F0F0" : "1px solid transparent",
             }}>
             {t}
           </button>
@@ -111,91 +112,93 @@ function FocusTab({ project }: { project: Project }) {
   const recentDays = project.history.slice(0, 7).reverse();
 
   return (
-    <div className="p-5 space-y-8">
+    <div className="p-4 space-y-6">
       {/* Today's task */}
       <section>
-        <p className="font-mono text-[10px] tracking-[3px] text-[#555] mb-3">TODAY&apos;S TASK</p>
+        <p className="font-mono text-[8px] tracking-[3px] mb-2" style={{ color: "#444444" }}>TODAY&apos;S TASK</p>
         {editing ? (
           <div className="space-y-3">
             <input autoFocus value={taskText} onChange={(e) => setTaskText(e.target.value)}
-              className="w-full rounded-lg px-4 py-3 text-lg"
-              style={{ background: "#111", border: `1px solid ${project.color}`, color: "#F0F0F0" }} />
+              className="w-full px-3 py-3 font-mono text-[14px]"
+              style={{ background: "#111", border: "0.5px solid #F0F0F0", color: "#F0F0F0" }} />
             <div className="flex gap-2">
               <button onClick={saveToday} disabled={pending}
-                className="font-mono text-[10px] tracking-[3px] px-4 py-2 rounded btn-press"
-                style={{ background: project.color, color: "#080808" }}>SAVE</button>
+                className="font-impact text-[14px] tracking-[3px] px-4 btn-press"
+                style={{ height: 40, background: "#F0F0F0", color: "#080808" }}>SAVE</button>
               <button onClick={() => setEditing(false)}
-                className="font-mono text-[10px] tracking-[3px] px-4 py-2 rounded btn-press"
-                style={{ border: "1px solid #2A2A2A", color: "#555" }}>CANCEL</button>
+                className="font-impact text-[14px] tracking-[3px] px-4 btn-press"
+                style={{ height: 40, border: "0.5px solid #2A2A2A", color: "#444444" }}>CANCEL</button>
             </div>
           </div>
         ) : project.todayFocus ? (
           <>
-            <p className={`font-impact leading-[0.88] mb-4 ${done ? "strike-anim relative" : ""}`}
-              style={{ fontSize: "32px", color: done ? "#555" : project.color }}>
+            <p className={`font-impact leading-[0.95] mb-4 ${done ? "strike-anim" : ""}`}
+              style={{ fontSize: 28, color: done ? "#444444" : "#F0F0F0" }}>
               {project.todayFocus.task.toUpperCase()}.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setEditing(true)}
-                className="font-mono text-[10px] tracking-[3px] px-4 py-2 rounded btn-press"
-                style={{ border: "1px solid #2A2A2A", color: "#555" }}>EDIT</button>
+                className="font-mono text-[9px] tracking-[3px] px-3 btn-press"
+                style={{ height: 40, border: "0.5px solid #2A2A2A", color: "#444444" }}>EDIT</button>
               <button onClick={markDone} disabled={done || pending}
-                className="flex-1 h-[48px] rounded-lg font-impact text-[18px] tracking-[4px] btn-press transition-all"
+                className="flex-1 font-impact text-[16px] tracking-[4px] btn-press"
                 style={{
-                  background: done ? "#47FFB8" : `${project.color}15`,
-                  border: `1px solid ${done ? "#47FFB8" : project.color}66`,
-                  color: done ? "#080808" : project.color,
+                  height: 48,
+                  background: done ? "#F0F0F010" : "transparent",
+                  border: "0.5px solid #2A2A2A",
+                  color: done ? "#F0F0F030" : "#444444",
                 }}>
-                {done ? "✓ DONE" : "MARK DONE ✓"}
+                {done ? "✓ DONE" : "DONE ✓"}
               </button>
             </div>
           </>
         ) : (
-          <div className="text-center py-6">
-            <p className="font-impact text-[32px] leading-[0.9] text-white mb-4">
+          <div className="py-8 text-center">
+            <p className="font-impact text-[28px] leading-[0.95]" style={{ color: "#F0F0F0" }}>
               WHAT&apos;S THE<br />ONE THING?
             </p>
-            <button onClick={() => { setEditing(true); }}
-              className="font-mono text-[10px] tracking-[3px] px-4 py-2 rounded btn-press"
-              style={{ background: "#E8FF47", color: "#080808" }}>
-              SET TODAY&apos;S TASK →
+            <button onClick={() => setEditing(true)}
+              className="font-impact text-[14px] tracking-[3px] mt-4 px-4 btn-press"
+              style={{ height: 48, background: "#F0F0F0", color: "#080808" }}>
+              SET TASK →
             </button>
           </div>
         )}
       </section>
 
       {/* Tomorrow */}
-      <section style={{ borderTop: "0.5px solid #2A2A2A" }} className="pt-6">
-        <p className="font-mono text-[10px] tracking-[3px] text-[#555] mb-3">SET TOMORROW&apos;S ONE THING:</p>
+      <section style={{ borderTop: "0.5px solid #2A2A2A" }} className="pt-4">
+        <p className="font-mono text-[8px] tracking-[3px] mb-2" style={{ color: "#444444" }}>
+          TOMORROW&apos;S ONE THING:
+        </p>
         <div className="flex gap-2">
           <input value={tomorrow} onChange={(e) => setTomorrow(e.target.value)}
             placeholder="What's the one thing tomorrow?"
-            className="flex-1 rounded-lg px-4 py-3 text-sm placeholder-[#333]"
-            style={{ background: "#111", border: `1px solid ${project.color}30`, color: "#F0F0F0" }} />
+            className="flex-1 px-3 py-3 font-mono text-[13px] placeholder-[#2A2A2A]"
+            style={{ background: "#111", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
           <button onClick={saveTomorrow} disabled={pending || !tomorrow.trim()}
-            className="font-mono text-[10px] tracking-[3px] px-4 py-3 rounded btn-press shrink-0"
-            style={{ border: `1px solid ${project.color}40`, color: project.color }}>
-            SAVE →
-          </button>
+            className="font-impact text-[12px] tracking-[3px] px-3 shrink-0 btn-press"
+            style={{ height: 44, border: "0.5px solid #2A2A2A", color: "#444444" }}>SAVE</button>
         </div>
       </section>
 
       {/* Streak */}
-      <section className="rounded-xl p-5" style={{ background: "#111", border: "0.5px solid #2A2A2A" }}>
-        <p className="font-impact text-[28px] leading-none tracking-wider" style={{ color: project.color }}>
+      <section style={{ borderTop: "0.5px solid #2A2A2A" }} className="pt-4">
+        <p className="font-impact text-[24px] tracking-wider mb-4"
+          style={{ color: project.streak > 0 ? "#F0F0F0" : "#444444" }}>
           🔥 {project.streak} CONSECUTIVE DAY{project.streak === 1 ? "" : "S"}
         </p>
-        <div className="flex items-center gap-3 mt-4">
+        <div className="flex items-center gap-3">
           {days.map((d, i) => {
             const entry = recentDays[i];
             return (
               <div key={i} className="flex flex-col items-center gap-1.5">
-                <span className="font-mono text-[10px] text-[#333]">{d}</span>
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]"
+                <span className="font-mono text-[9px]" style={{ color: "#444444" }}>{d}</span>
+                <span className="w-6 h-6 flex items-center justify-center font-mono text-[9px]"
                   style={{
-                    background: entry?.completed ? `${project.color}20` : "#1A1A1A",
-                    border: `1px solid ${entry?.completed ? project.color : "#2A2A2A"}`,
-                    color: entry?.completed ? project.color : "#333",
+                    border: `0.5px solid ${entry?.completed ? "#F0F0F0" : "#2A2A2A"}`,
+                    color: entry?.completed ? "#F0F0F0" : "#2A2A2A",
+                    background: entry?.completed ? "#F0F0F010" : "transparent",
                   }}>
                   {entry?.completed ? "✓" : "○"}
                 </span>
@@ -203,7 +206,9 @@ function FocusTab({ project }: { project: Project }) {
             );
           })}
         </div>
-        <p className="font-mono text-[11px] text-[#333] mt-4 tracking-wider">Ship something every day.</p>
+        <p className="font-mono text-[9px] tracking-[3px] mt-4" style={{ color: "#444444" }}>
+          SHIP SOMETHING EVERY DAY.
+        </p>
       </section>
     </div>
   );
@@ -224,9 +229,7 @@ function MilestonesTab({ project }: { project: Project }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: project.id, title, targetDate: target }),
       });
-      setTitle("");
-      setTarget("");
-      setShowAdd(false);
+      setTitle(""); setTarget(""); setShowAdd(false);
       router.refresh();
     });
   }
@@ -242,67 +245,56 @@ function MilestonesTab({ project }: { project: Project }) {
     });
   }
 
-  const open = project.milestones.filter((m) => !m.completed);
-  const completed = project.milestones.filter((m) => m.completed);
-
   return (
-    <div className="p-5 space-y-4">
-      {open.map((m) => {
+    <div>
+      {project.milestones.map((m) => {
         const d = daysUntil(m.targetDate);
         return (
-          <div key={m.id} className="rounded-xl p-5" style={{ background: "#111", border: "0.5px solid #2A2A2A" }}>
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-impact text-[20px] tracking-wide text-white">{m.title.toUpperCase()}</p>
+          <div key={m.id} className="flex items-center px-4"
+            style={{
+              height: 64,
+              borderBottom: "0.5px solid #2A2A2A",
+              opacity: m.completed ? 0.3 : 1,
+            }}>
+            <div className="flex-1 min-w-0">
+              <p className={`font-impact text-[16px] tracking-wider ${m.completed ? "line-through" : ""}`}
+                style={{ color: m.completed ? "#444444" : "#F0F0F0" }}>
+                {m.title.toUpperCase()}
+              </p>
+              <p className="font-mono text-[9px] tracking-wider" style={{ color: "#444444" }}>
+                {formatMilestoneDate(m.targetDate)} · {d > 0 ? `${d}D` : d === 0 ? "TODAY" : `${-d}D LATE`}
+              </p>
             </div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-[11px] text-[#555] tracking-wider">
-                {formatMilestoneDate(m.targetDate)}, {m.targetDate.split("-")[0]}
-              </span>
-              <span className="font-mono text-[11px] tracking-wider"
-                style={{ color: d <= 0 ? "#FF4747" : "#555" }}>
-                {d > 0 ? `${d} DAYS` : d === 0 ? "TODAY" : `${-d} DAYS OVERDUE`}
-              </span>
-            </div>
-            <div className="h-1 rounded-full mb-4" style={{ background: "#1A1A1A" }}>
-              <div className="h-full rounded-full" style={{ width: "0%", background: project.color }} />
-            </div>
-            <button onClick={() => toggle(m.id, true)}
-              className="font-mono text-[10px] tracking-[3px] px-3 py-1.5 rounded btn-press"
-              style={{ border: `1px solid ${project.color}40`, color: project.color }}>
-              MARK COMPLETE ✓
-            </button>
+            {!m.completed && (
+              <button onClick={() => toggle(m.id, true)}
+                className="font-mono text-[9px] tracking-[3px] px-2 shrink-0 btn-press"
+                style={{ height: 32, border: "0.5px solid #2A2A2A", color: "#444444" }}>
+                ✓
+              </button>
+            )}
           </div>
         );
       })}
-
-      {completed.map((m) => (
-        <div key={m.id} className="rounded-xl p-4 opacity-40" style={{ background: "#111", border: "0.5px solid #2A2A2A" }}>
-          <p className="text-sm line-through text-[#555]">{m.title}</p>
-          <span className="font-mono text-[10px] text-[#333]">{formatMilestoneDate(m.targetDate)}</span>
-        </div>
-      ))}
-
       {showAdd ? (
-        <div className="space-y-3 pt-4" style={{ borderTop: "0.5px solid #2A2A2A" }}>
+        <div className="p-4 space-y-3">
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Milestone title"
-            className="w-full rounded-lg px-4 py-3 text-sm placeholder-[#333]"
-            style={{ background: "#111", border: `1px solid ${project.color}30`, color: "#F0F0F0" }} />
+            className="w-full px-3 py-2 font-mono text-[13px] placeholder-[#2A2A2A]"
+            style={{ background: "#111", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
           <input type="date" value={target} onChange={(e) => setTarget(e.target.value)}
-            className="w-full rounded-lg px-4 py-3 text-sm"
+            className="w-full px-3 py-2 font-mono text-[13px]"
             style={{ background: "#111", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
           <div className="flex gap-2">
-            <button onClick={add}
-              className="font-mono text-[10px] tracking-[3px] px-4 py-2 rounded btn-press"
-              style={{ background: project.color, color: "#080808" }}>SAVE</button>
+            <button onClick={add} className="font-impact text-[14px] tracking-[3px] px-4 btn-press"
+              style={{ height: 40, background: "#F0F0F0", color: "#080808" }}>SAVE</button>
             <button onClick={() => setShowAdd(false)}
-              className="font-mono text-[10px] tracking-[3px] px-4 py-2 rounded btn-press"
-              style={{ border: "1px solid #2A2A2A", color: "#555" }}>CANCEL</button>
+              className="font-impact text-[14px] tracking-[3px] px-4 btn-press"
+              style={{ height: 40, border: "0.5px solid #2A2A2A", color: "#444444" }}>CANCEL</button>
           </div>
         </div>
       ) : (
         <button onClick={() => setShowAdd(true)}
-          className="w-full font-mono text-[10px] tracking-[3px] py-4 rounded-xl btn-press"
-          style={{ border: "1px dashed #2A2A2A", color: "#555" }}>
+          className="w-full font-impact text-[14px] tracking-[3px] btn-press"
+          style={{ height: 48, border: "0.5px solid #2A2A2A", color: "#444444" }}>
           + ADD MILESTONE
         </button>
       )}
@@ -325,9 +317,7 @@ function BlockersTab({ project }: { project: Project }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: project.id, description, reason }),
       });
-      setDescription("");
-      setReason("");
-      setShowAdd(false);
+      setDescription(""); setReason(""); setShowAdd(false);
       router.refresh();
     });
   }
@@ -346,32 +336,35 @@ function BlockersTab({ project }: { project: Project }) {
   const open = project.blockers.filter((b) => !b.resolved);
 
   return (
-    <div className="p-5 space-y-4">
+    <div>
       {open.length === 0 && !showAdd && (
-        <div className="py-12 text-center">
-          <p className="font-impact text-[48px] leading-[0.85] text-white">NOTHING<br />BLOCKING.</p>
-          <p className="text-sm text-[#555] mt-3">Ship it. 💪</p>
+        <div className="py-16 text-center">
+          <p className="font-impact text-[48px] leading-[0.9]" style={{ color: "#F0F0F0" }}>
+            NOTHING<br />BLOCKING.
+          </p>
+          <p className="font-mono text-[12px] mt-3" style={{ color: "#444444" }}>Ship it.</p>
         </div>
       )}
 
       {project.blockers.map((b) => (
-        <div key={b.id} className="rounded-xl p-5"
+        <div key={b.id} className="px-4 py-4"
           style={{
             background: "#111",
-            border: `0.5px solid ${b.resolved ? "#2A2A2A" : "#FF474740"}`,
-            opacity: b.resolved ? 0.4 : 1,
+            borderBottom: "1px solid #080808",
+            borderLeft: b.resolved ? "none" : "3px solid #F0F0F0",
+            opacity: b.resolved ? 0.3 : 1,
           }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-[10px] tracking-[3px] text-stuck">🚫 {b.resolved ? "RESOLVED" : "OPEN"}</span>
-          </div>
-          <p className={`text-sm mb-2 ${b.resolved ? "line-through text-[#555]" : "text-white"}`}>{b.description}</p>
-          <p className="font-mono text-[11px] text-[#555] leading-relaxed mb-3">
-            <span className="text-[#333]">WHY: </span>{b.reason}
+          <p className="font-mono text-[8px] tracking-[3px] mb-1" style={{ color: "#444444" }}>WHAT:</p>
+          <p className={`font-impact text-[18px] tracking-wider mb-3 ${b.resolved ? "line-through" : ""}`}
+            style={{ color: b.resolved ? "#444444" : "#F0F0F0" }}>
+            {b.description.toUpperCase()}
           </p>
+          <p className="font-mono text-[8px] tracking-[3px] mb-1" style={{ color: "#444444" }}>WHY:</p>
+          <p className="font-mono text-[12px] leading-relaxed mb-3" style={{ color: "#F0F0F060" }}>{b.reason}</p>
           {!b.resolved && (
             <button onClick={() => resolve(b.id)}
-              className="font-mono text-[10px] tracking-[3px] px-3 py-1.5 rounded btn-press"
-              style={{ border: "1px solid #555", color: "#555" }}>
+              className="font-mono text-[10px] tracking-[3px] px-3 btn-press"
+              style={{ height: 32, border: "0.5px solid #2A2A2A", color: "#444444" }}>
               RESOLVED ✓
             </button>
           )}
@@ -379,24 +372,24 @@ function BlockersTab({ project }: { project: Project }) {
       ))}
 
       {showAdd ? (
-        <div className="space-y-3 pt-4" style={{ borderTop: "0.5px solid #2A2A2A" }}>
-          <p className="font-impact text-[24px] tracking-wider text-stuck">WHAT&apos;S STUCK?</p>
+        <div className="p-4 space-y-3">
+          <p className="font-impact text-[20px] tracking-wider" style={{ color: "#F0F0F0" }}>WHAT&apos;S STUCK?</p>
           <input value={description} onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-lg px-4 py-3 text-sm placeholder-[#333]"
-            style={{ background: "#1A1A1A", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
-          <p className="font-impact text-[24px] tracking-wider text-white">WHY?</p>
-          <p className="font-mono text-[10px] tracking-[2px] text-[#555]">BE SPECIFIC. THIS FORCES YOU TO THINK.</p>
+            className="w-full px-3 py-3 font-mono text-[13px] placeholder-[#2A2A2A]"
+            style={{ background: "#080808", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
+          <p className="font-impact text-[20px] tracking-wider" style={{ color: "#F0F0F0" }}>WHY?</p>
+          <p className="font-mono text-[9px] tracking-[2px]" style={{ color: "#444444" }}>BE SPECIFIC. FORCES YOU TO THINK.</p>
           <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3}
-            className="w-full rounded-lg px-4 py-3 text-sm placeholder-[#333] resize-none"
-            style={{ background: "#1A1A1A", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
+            className="w-full px-3 py-3 font-mono text-[13px] placeholder-[#2A2A2A] resize-none"
+            style={{ background: "#080808", border: "0.5px solid #2A2A2A", color: "#F0F0F0" }} />
           <button onClick={addBlocker}
-            className="w-full h-[48px] rounded-lg font-impact text-[18px] tracking-[4px] btn-press"
-            style={{ background: "#FF4747", color: "#080808" }}>SAVE BLOCKER</button>
+            className="w-full font-impact text-[18px] tracking-[4px] btn-press"
+            style={{ height: 52, background: "#F0F0F0", color: "#080808" }}>SAVE BLOCKER</button>
         </div>
       ) : (
         <button onClick={() => setShowAdd(true)}
-          className="w-full font-mono text-[10px] tracking-[3px] py-4 rounded-xl btn-press"
-          style={{ border: "1px dashed #FF474740", color: "#FF474780" }}>
+          className="w-full font-impact text-[14px] tracking-[3px] btn-press"
+          style={{ height: 48, border: "1px dashed #2A2A2A", color: "#444444" }}>
           + FLAG BLOCKER
         </button>
       )}
@@ -406,22 +399,27 @@ function BlockersTab({ project }: { project: Project }) {
 
 function LogTab({ project }: { project: Project }) {
   return (
-    <div className="p-5">
+    <div>
       {project.history.map((f) => (
-        <div key={f.id} className="flex items-center gap-3 py-3" style={{ borderBottom: "0.5px solid #1A1A1A" }}>
-          <span className="font-mono text-[11px] text-[#555] w-14 shrink-0">
+        <div key={f.id} className="flex items-center px-4"
+          style={{ height: 48, borderBottom: "0.5px solid #2A2A2A" }}>
+          <span className="font-mono text-[9px] tracking-wider shrink-0" style={{ width: 56, color: "#444444" }}>
             {formatMilestoneDate(f.date)}
           </span>
-          <span className={`text-sm flex-1 ${f.completed ? "text-white" : "text-[#333]"}`}>
+          <span className="font-mono text-[13px] flex-1 truncate px-2"
+            style={{ color: f.completed ? "#F0F0F0" : "#444444" }}>
             {f.task}
           </span>
-          <span className="text-xs" style={{ color: f.completed ? "#47FFB8" : "#333" }}>
-            {f.completed ? "✓" : "○"}
+          <span className="shrink-0 w-4 h-4 flex items-center justify-center font-mono text-[9px]"
+            style={f.completed ? { background: "#F0F0F0", color: "#080808", borderRadius: "50%" } : { border: "1px solid #2A2A2A", borderRadius: "50%" }}>
+            {f.completed ? "✓" : ""}
           </span>
         </div>
       ))}
       {project.history.length === 0 && (
-        <p className="text-center text-[#555] font-mono text-xs tracking-[3px] py-12">NO HISTORY YET.</p>
+        <p className="text-center font-mono text-[9px] tracking-[3px] py-16" style={{ color: "#444444" }}>
+          NO HISTORY YET.
+        </p>
       )}
     </div>
   );

@@ -18,11 +18,11 @@ type Project = {
 };
 
 function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "SHIP SOMETHING TODAY.";
-  if (hour < 17) return "STILL BUILDING?";
-  if (hour < 21) return "FINISH STRONG.";
-  return "WHAT DID YOU BUILD?";
+  const h = new Date().getHours();
+  if (h < 12) return "SHIP SOMETHING TODAY.";
+  if (h < 17) return "STILL BUILDING?";
+  if (h < 21) return "FINISH STRONG.";
+  return "WHAT DID YOU SHIP?";
 }
 
 export function HomeClient({ projects, maxStreak }: { projects: Project[]; maxStreak: number }) {
@@ -32,60 +32,52 @@ export function HomeClient({ projects, maxStreak }: { projects: Project[]; maxSt
   const doneCount = projects.filter((p) => p.focuses[0]?.completed).length;
   const totalCount = projects.filter((p) => p.focuses[0]).length;
 
-  const doneColor = doneCount === 0 ? "#FF4747" :
-    doneCount < totalCount ? "#E8FF47" : "#47FFB8";
+  const doneColor = doneCount === 0 ? "#444444" :
+    doneCount < totalCount ? "#F0F0F080" : "#F0F0F0";
 
-  const streakColor = maxStreak === 0 ? "#333" :
-    maxStreak >= 7 ? "#E8FF47" : maxStreak >= 3 ? "#FF8C00" : "#F0F0F0";
-
-  const checkAllDone = useCallback(() => {
-    setTimeout(() => {
-      router.refresh();
-    }, 500);
+  const checkDone = useCallback(() => {
+    setTimeout(() => router.refresh(), 500);
   }, [router]);
 
   return (
     <>
-      {celebrate && (
-        <Celebration streak={maxStreak + 1} onDismiss={() => setCelebrate(false)} />
-      )}
+      {celebrate && <Celebration streak={maxStreak + 1} onDismiss={() => setCelebrate(false)} />}
 
       {/* Header */}
-      <header className="h-16 shrink-0 flex items-center justify-between px-5"
-        style={{ borderBottom: "0.5px solid #2A2A2A" }}>
-        <div className="flex items-center gap-1">
-          <span className="font-impact text-[22px] tracking-wider text-white">R2·BUILD</span>
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#E8FF47" }} />
-        </div>
-        <span className={`font-mono text-xs tracking-wider ${maxStreak >= 7 ? "streak-pulse" : ""}`}
-          style={{ color: streakColor }}>
+      <header className="shrink-0 flex items-center justify-between px-4"
+        style={{ height: 56, borderBottom: "0.5px solid #2A2A2A" }}>
+        <span className="font-impact text-[20px] tracking-wider" style={{ color: "#F0F0F0" }}>
+          R2·BUILD
+        </span>
+        <span className="font-mono text-[10px] tracking-wider"
+          style={{ color: maxStreak > 0 ? "#F0F0F0" : "#444444" }}>
           🔥 {maxStreak} DAY STREAK
         </span>
       </header>
 
-      {/* Daily progress strip */}
-      <div className="h-12 shrink-0 flex items-center justify-between px-5"
-        style={{ borderBottom: "0.5px solid #2A2A2A" }}>
-        <span className="font-mono text-[11px] tracking-[3px] text-[#555]">
+      {/* Progress strip */}
+      <div className="shrink-0 flex items-center justify-between px-4"
+        style={{ height: 40, borderBottom: "0.5px solid #2A2A2A" }}>
+        <span className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444444" }}>
           {getGreeting()}
         </span>
-        <span className="font-mono text-[11px] tracking-[3px]" style={{ color: doneColor }}>
+        <span className="font-mono text-[10px] tracking-[3px]" style={{ color: doneColor }}>
           {doneCount}/{totalCount} DONE
         </span>
       </div>
 
-      {/* Project cards */}
-      <section className="flex-1 overflow-y-auto py-3 no-scrollbar">
+      {/* Cards */}
+      <section className="flex-1 overflow-y-auto no-scrollbar pb-14">
         {projects.map((p) => (
-          <ProjectCard key={p.id} project={p} onAllDone={checkAllDone} />
+          <ProjectCard key={p.id} project={p} onDone={checkDone} />
         ))}
         {projects.length === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center h-full px-6 text-center">
-            <p className="font-impact text-[42px] leading-[0.9] text-white">
-              WHAT&apos;S THE<br />ONE THING<br />TODAY?
+          <div className="flex flex-col items-center justify-center h-full px-4 text-center">
+            <p className="font-impact text-[32px] leading-[0.95]" style={{ color: "#F0F0F0" }}>
+              NO PROJECTS YET.
             </p>
-            <p className="font-mono text-xs text-[#555] tracking-[3px] mt-4">
-              Run `npm run db:seed` to get started.
+            <p className="font-mono text-[9px] tracking-[3px] mt-4" style={{ color: "#444444" }}>
+              RUN NPM RUN DB:SEED
             </p>
           </div>
         )}
