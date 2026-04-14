@@ -25,8 +25,9 @@ export default async function HomePage() {
           id: p.id,
           name: p.name,
           status: p.status,
+          color: p.color,
           focus: p.focuses[0]
-            ? { task: p.focuses[0].task, completed: p.focuses[0].completed }
+            ? { id: p.focuses[0].id, task: p.focuses[0].task, completed: p.focuses[0].completed }
             : null,
         }))}
         maxStreak={maxStreak}

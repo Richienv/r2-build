@@ -16,34 +16,59 @@ const rightItems = [
 export function BottomNav() {
   const pathname = usePathname();
 
+  const renderItem = (item: { href: string; label: string }) => {
+    const active = pathname === item.href;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className="flex-1 flex items-center justify-center btn-press relative"
+        style={{ height: "100%" }}
+      >
+        {active && (
+          <span
+            style={{
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 28,
+              height: 2,
+              background: "#E8FF47",
+            }}
+          />
+        )}
+        <span
+          className="font-mono text-[9px] uppercase"
+          style={{
+            color: active ? "#E8FF47" : "#555555",
+            letterSpacing: "3px",
+          }}
+        >
+          {item.label}
+        </span>
+      </Link>
+    );
+  };
+
   return (
-    <nav className="h-16 shrink-0 flex items-center"
+    <nav
+      className="h-16 shrink-0 flex items-center"
       style={{
-        background: "#080808",
-        borderTop: "0.5px solid rgba(255,255,255,0.1)",
+        background: "#111111",
+        borderTop: "1px solid #2a2a2a",
         overflow: "visible",
         paddingBottom: "env(safe-area-inset-bottom)",
-      }}>
-
-      {/* Left 2 */}
-      {leftItems.map((item) => {
-        const active = pathname === item.href;
-        return (
-          <Link key={item.href} href={item.href}
-            className="flex-1 flex items-center justify-center btn-press"
-            style={{ height: "100%" }}>
-            <span className="font-mono text-[9px] tracking-[3px]"
-              style={{ color: active ? "#F0F0F0" : "#444" }}>
-              {item.label}
-            </span>
-          </Link>
-        );
-      })}
+      }}
+    >
+      {leftItems.map(renderItem)}
 
       {/* Center OS button */}
       <div className="flex-1 flex items-center justify-center" style={{ overflow: "visible" }}>
         <button
-          onClick={() => { window.location.href = "https://r2-os.vercel.app"; }}
+          onClick={() => {
+            window.location.href = "https://r2-os.vercel.app";
+          }}
           className="btn-press"
           style={{
             width: 56,
@@ -68,20 +93,7 @@ export function BottomNav() {
         </button>
       </div>
 
-      {/* Right 2 */}
-      {rightItems.map((item) => {
-        const active = pathname === item.href;
-        return (
-          <Link key={item.href} href={item.href}
-            className="flex-1 flex items-center justify-center btn-press"
-            style={{ height: "100%" }}>
-            <span className="font-mono text-[9px] tracking-[3px]"
-              style={{ color: active ? "#F0F0F0" : "#444" }}>
-              {item.label}
-            </span>
-          </Link>
-        );
-      })}
+      {rightItems.map(renderItem)}
     </nav>
   );
 }
