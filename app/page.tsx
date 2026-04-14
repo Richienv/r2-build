@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { todayCST } from "@/lib/date";
+import { todayCST, weekRangeCST } from "@/lib/date";
 import { BottomNav } from "@/components/BottomNav";
 import { HomeClient } from "@/components/HomeClient";
 
@@ -7,16 +7,29 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const today = todayCST();
-  const projects = await prisma.project.findMany({
-    orderBy: { order: "asc" },
-    include: {
-      focuses: { where: { date: today } },
-      blockers: { where: { resolved: false }, take: 1 },
-    },
-  });
+  const { start: weekStart, end: weekEnd } = weekRangeCST();
+
+  const [projects, weekTasks] = await Promise.all([
+    prisma.project.findMany({
+      orderBy: { order: "asc" },
+      include: {
+        focuses: { where: { date: today } },
+      },
+    }),
+    prisma.task.findMany({
+      where: { dueDate: { gte: weekStart, lte: weekEnd } },
+    }),
+  ]);
 
   const maxStreak = Math.max(0, ...projects.map((p) => p.streak));
-  const blockerProject = projects.find((p) => p.blockers.length > 0);
+
+  const weekByKey: Record<string, { total: number; done: number }> = {};
+  for (const t of weekTasks) {
+    const key = t.projectKey ?? "__none__";
+    if (!weekByKey[key]) weekByKey[key] = { total: 0, done: 0 };
+    weekByKey[key].total += 1;
+    if (t.completed) weekByKey[key].done += 1;
+  }
 
   return (
     <main className="h-[100dvh] flex flex-col overflow-hidden" style={{ background: "#080808" }}>
@@ -29,9 +42,10 @@ export default async function HomePage() {
           focus: p.focuses[0]
             ? { id: p.focuses[0].id, task: p.focuses[0].task, completed: p.focuses[0].completed }
             : null,
+          weekDone: weekByKey[p.name]?.done ?? 0,
+          weekTotal: weekByKey[p.name]?.total ?? 0,
         }))}
         maxStreak={maxStreak}
-        blockerProjectName={blockerProject?.name ?? null}
       />
       <BottomNav />
     </main>

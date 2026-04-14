@@ -78,3 +78,51 @@ model Blocker {
 
   @@index([projectId])
 }
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  projectKey  String?
+  dueDate     String
+  priority    String    @default("MEDIUM")
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectKey])
+  @@index([dueDate])
+}
+
+model TimelineEvent {
+  id         String   @id @default(cuid())
+  title      String
+  projectKey String
+  date       DateTime
+  type       String
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@index([date])
+  @@index([projectKey])
+}
+
+model Note {
+  id        String        @id @default(cuid())
+  title     String
+  sections  NoteSection[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model NoteSection {
+  id        String  @id @default(cuid())
+  noteId    String
+  note      Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  heading   String
+  content   String
+  order     Int
+  collapsed Boolean @default(false)
+
+  @@index([noteId])
+}

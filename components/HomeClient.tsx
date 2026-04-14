@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 type Project = {
   id: string;
@@ -10,6 +9,8 @@ type Project = {
   status: string;
   color: string;
   focus: { id: string; task: string; completed: boolean } | null;
+  weekDone: number;
+  weekTotal: number;
 };
 
 const STATUS_OPTIONS = ["BUILDING", "PAUSED", "SHIPPED"] as const;
@@ -25,40 +26,25 @@ const DB_TO_STATUS: Record<string, string> = {
   STUCK: "BUILDING",
   WAITING: "PAUSED",
 };
-const COLOR_PRESETS = ["#E8FF47", "#47A3FF", "#FF4778", "#47FFB0"];
-
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "SHIP SOMETHING TODAY.";
-  if (h < 17) return "STILL BUILDING?";
-  if (h < 21) return "FINISH STRONG.";
-  return "WHAT DID YOU BUILD?";
-}
+const COLOR_PRESETS = ["#E8FF47", "#47A3FF", "#FF4778", "#47FFB0", "#F7931A", "#7B2FBE"];
 
 function getDateStr(): string {
   const now = new Date();
   const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  const h = now.getHours();
-  const m = String(now.getMinutes()).padStart(2, "0");
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} · ${h12}:${m} ${ampm}`;
+  return `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 }
 
 export function HomeClient({
   projects,
   maxStreak,
-  blockerProjectName,
 }: {
   projects: Project[];
   maxStreak: number;
-  blockerProjectName: string | null;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [dateStr, setDateStr] = useState("");
-  const [greeting, setGreeting] = useState("");
   const [editingRow, setEditingRow] = useState<string | null>(null);
   const [taskDraft, setTaskDraft] = useState("");
   const [sheet, setSheet] = useState<
@@ -73,17 +59,11 @@ export function HomeClient({
 
   useEffect(() => {
     setDateStr(getDateStr());
-    setGreeting(getGreeting());
   }, []);
 
   const withFocus = projects.filter((p) => p.focus);
   const doneCount = withFocus.filter((p) => p.focus!.completed).length;
   const totalCount = projects.length;
-  const setCount = withFocus.length;
-  const allTasksSet = setCount === totalCount && totalCount > 0;
-  const anyTaskSet = setCount > 0;
-  const allDone = totalCount > 0 && doneCount === totalCount && allTasksSet;
-  const pct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
 
   function startLongPress(project: Project) {
     longPressedRef.current = false;
@@ -157,7 +137,7 @@ export function HomeClient({
 
   return (
     <>
-      {/* Header 52px */}
+      {/* Header */}
       <header
         className="shrink-0 flex items-center justify-between px-5"
         style={{ height: 52, borderBottom: "0.5px solid #222" }}
@@ -167,10 +147,10 @@ export function HomeClient({
         </span>
         <div className="flex items-center gap-4">
           <span
-            className="font-mono text-[10px] tracking-wider"
-            style={{ color: "#555" }}
+            className="font-mono text-[9px] tracking-wider"
+            style={{ color: "#444" }}
           >
-            {maxStreak} DAY STREAK
+            {maxStreak}D STREAK
           </span>
           {projects.length < 6 && (
             <button
@@ -184,222 +164,186 @@ export function HomeClient({
         </div>
       </header>
 
-      {/* Context strip 40px */}
-      <div
-        className="shrink-0 flex items-center justify-between px-5"
-        style={{ height: 40, borderBottom: "0.5px solid #222" }}
+      {/* Score hero */}
+      <section
+        className="shrink-0 flex flex-col items-center justify-center px-5"
+        style={{ paddingTop: 24, paddingBottom: 20, borderBottom: "0.5px solid #1a1a1a" }}
       >
-        <span className="font-mono text-[9px] tracking-wider" style={{ color: "#555" }}>
-          {dateStr}
-        </span>
-        <span className="font-mono text-[9px] tracking-wider" style={{ color: "#555" }}>
-          {greeting}
-        </span>
-      </div>
-
-      {/* Blocker warning strip */}
-      {blockerProjectName && (
-        <Link
-          href="/blockers"
-          className="shrink-0 flex items-center px-5 btn-press"
-          style={{ height: 36, background: "#1A1A1A", borderBottom: "1px solid #F0F0F015" }}
+        <p className="font-mono text-[9px] tracking-[3px]" style={{ color: "#444" }}>
+          {dateStr || "\u00A0"}
+        </p>
+        <p
+          className="font-impact leading-none"
+          style={{ fontSize: 68, color: "#E8FF47", marginTop: 6 }}
         >
-          <span
-            className="font-mono text-[9px] tracking-wider"
-            style={{ color: "#F0F0F060" }}
-          >
-            BLOCKER: {blockerProjectName}
-          </span>
-        </Link>
-      )}
-
-      {/* Hero section */}
-      <section className="flex-1 flex flex-col items-center justify-center px-5">
-        {!anyTaskSet && totalCount > 0 ? (
-          <>
-            <p
-              className="font-impact leading-none"
-              style={{ fontSize: 72, color: "#E8FF47" }}
-            >
-              0/{totalCount}
-            </p>
-            <p
-              className="font-mono text-[10px] tracking-[3px] mt-1"
-              style={{ color: "#555" }}
-            >
-              TASKS SET
-            </p>
-            <p
-              className="font-impact mt-6 tracking-wider text-center"
-              style={{ fontSize: 22, color: "#F0F0F0" }}
-            >
-              WHAT&apos;S THE ONE THING?
-            </p>
-            <button
-              onClick={() => {
-                const first = projects[0];
-                if (first) onRowTap(first);
-              }}
-              className="btn-press font-mono text-[10px] tracking-[3px] mt-6 px-5"
-              style={{
-                height: 40,
-                background: "#E8FF47",
-                color: "#080808",
-                border: "none",
-              }}
-            >
-              SET ALL {totalCount} →
-            </button>
-          </>
-        ) : (
-          <>
-            <p
-              className="font-mono text-[9px] tracking-[3px] uppercase"
-              style={{ color: "#555" }}
-            >
-              TODAY
-            </p>
-            <p
-              className="font-impact leading-none mt-2"
-              style={{ fontSize: 80, color: "#E8FF47" }}
-            >
-              {doneCount}/{totalCount}
-            </p>
-            <p
-              className="font-mono text-[10px] tracking-[3px] mt-1"
-              style={{ color: "#555" }}
-            >
-              DONE
-            </p>
-
-            <div
-              className="mt-4"
-              style={{ width: 240, height: 3, background: "#222", borderRadius: 1.5 }}
-            >
-              <div
-                style={{
-                  width: `${pct}%`,
-                  height: "100%",
-                  background: "#E8FF47",
-                  borderRadius: 1.5,
-                  transition: "width 300ms ease",
-                }}
-              />
-            </div>
-
-            <p
-              className="font-mono text-[9px] tracking-wider mt-2"
-              style={{ color: allDone ? "#E8FF47" : "#555" }}
-            >
-              {allDone
-                ? "ALL DONE TODAY"
-                : `${totalCount - doneCount} REMAINING`}
-            </p>
-          </>
-        )}
+          {doneCount}/{totalCount}
+        </p>
+        <p className="font-mono text-[10px] tracking-[3px]" style={{ color: "#555", marginTop: 4 }}>
+          DONE
+        </p>
       </section>
 
       {/* Project rows */}
-      <div className="shrink-0" style={{ borderTop: "0.5px solid #222" }}>
-        {projects.map((p) => {
-          const isEditing = editingRow === p.id;
-          const done = p.focus?.completed;
-          return (
-            <div
-              key={p.id}
-              onPointerDown={() => startLongPress(p)}
-              onPointerUp={() => {
-                cancelLongPress();
-                if (!longPressedRef.current && !isEditing) onRowTap(p);
-              }}
-              onPointerLeave={cancelLongPress}
-              onPointerCancel={cancelLongPress}
-              className="btn-press px-5"
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        {projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-5">
+            <p
+              className="font-mono text-[10px] tracking-[3px] text-center"
+              style={{ color: "#444" }}
+            >
+              NO PROJECTS YET
+            </p>
+            <button
+              onClick={() => setSheet({ mode: "add" })}
+              className="btn-press font-mono text-[10px] tracking-[3px] mt-4 px-4"
               style={{
-                height: 72,
-                borderBottom: "0.5px solid #1a1a1a",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                cursor: "pointer",
-                WebkitUserSelect: "none",
-                userSelect: "none",
+                height: 36,
+                color: "#080808",
+                background: "#E8FF47",
+                border: "none",
               }}
             >
-              {/* Top row: project name + status pill */}
-              <div className="flex items-center justify-between">
-                <span
-                  className="font-mono uppercase"
-                  style={{
-                    fontSize: 10,
-                    color: "#555",
-                    letterSpacing: "2px",
-                  }}
-                >
-                  {p.name}
-                </span>
-                <span
-                  className="font-mono uppercase"
-                  style={{
-                    fontSize: 9,
-                    color: done ? "#E8FF47" : "#444",
-                    letterSpacing: "2px",
-                  }}
-                >
-                  {done ? "✓ DONE" : p.focus ? "IN PROGRESS" : "NO TASK"}
-                </span>
-              </div>
-
-              {/* Task */}
-              <div className="mt-1.5">
-                {isEditing ? (
-                  <input
-                    autoFocus
-                    value={taskDraft}
-                    onChange={(e) => setTaskDraft(e.target.value)}
-                    onBlur={() => saveTask(p.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveTask(p.id);
-                      if (e.key === "Escape") setEditingRow(null);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    placeholder="What's the one thing?"
-                    className="w-full bg-transparent outline-none font-bold"
-                    style={{
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: 16,
-                      color: "#F0F0F0",
-                    }}
-                  />
-                ) : p.focus ? (
-                  <p
-                    className="truncate font-bold"
-                    style={{
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: 16,
-                      color: done ? "#555" : "#F0F0F0",
-                      textDecoration: done ? "line-through" : "none",
-                    }}
-                  >
-                    {p.focus.task}
-                  </p>
-                ) : (
-                  <p
-                    className="font-mono italic"
+              + ADD PROJECT
+            </button>
+          </div>
+        ) : (
+          projects.map((p) => {
+            const isEditing = editingRow === p.id;
+            const done = p.focus?.completed;
+            const weekPct =
+              p.weekTotal > 0 ? (p.weekDone / p.weekTotal) * 100 : 0;
+            return (
+              <div
+                key={p.id}
+                onPointerDown={() => startLongPress(p)}
+                onPointerUp={() => {
+                  cancelLongPress();
+                  if (!longPressedRef.current && !isEditing) onRowTap(p);
+                }}
+                onPointerLeave={cancelLongPress}
+                onPointerCancel={cancelLongPress}
+                className="btn-press px-5"
+                style={{
+                  minHeight: 88,
+                  borderBottom: "0.5px solid #1a1a1a",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                  paddingTop: 14,
+                  paddingBottom: 14,
+                }}
+              >
+                {/* Top row: name + status */}
+                <div className="flex items-center justify-between">
+                  <span
+                    className="font-mono uppercase"
                     style={{
                       fontSize: 11,
-                      color: "#333",
-                      letterSpacing: "1px",
+                      color: "#555",
+                      letterSpacing: "2px",
                     }}
                   >
-                    TAP TO SET →
-                  </p>
-                )}
+                    {p.name}
+                  </span>
+                  <span
+                    className="font-mono uppercase"
+                    style={{
+                      fontSize: 9,
+                      color: done ? "#E8FF47" : "#444",
+                      letterSpacing: "2px",
+                    }}
+                  >
+                    {done ? "✓ DONE" : "NO TASK"}
+                  </span>
+                </div>
+
+                {/* Middle: focus task */}
+                <div style={{ marginTop: 6, marginBottom: 10 }}>
+                  {isEditing ? (
+                    <input
+                      autoFocus
+                      value={taskDraft}
+                      onChange={(e) => setTaskDraft(e.target.value)}
+                      onBlur={() => saveTask(p.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveTask(p.id);
+                        if (e.key === "Escape") setEditingRow(null);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      placeholder="What's the one thing?"
+                      className="w-full bg-transparent outline-none font-sans"
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: "#F0F0F0",
+                      }}
+                    />
+                  ) : p.focus ? (
+                    <p
+                      className="truncate font-sans"
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: done ? "#444" : "#F0F0F0",
+                        textDecoration: done ? "line-through" : "none",
+                      }}
+                    >
+                      {p.focus.task}
+                    </p>
+                  ) : (
+                    <p
+                      className="font-mono uppercase"
+                      style={{
+                        fontSize: 11,
+                        color: "#333",
+                        letterSpacing: "1.5px",
+                      }}
+                    >
+                      TAP TO SET TODAY&apos;S FOCUS →
+                    </p>
+                  )}
+                </div>
+
+                {/* Bottom: weekly progress bar */}
+                <div className="flex items-center gap-3">
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 2,
+                      background: "#222",
+                      borderRadius: 1,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${weekPct}%`,
+                        height: "100%",
+                        background: "#E8FF47",
+                        transition: "width 300ms ease",
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="font-mono uppercase"
+                    style={{
+                      fontSize: 9,
+                      color: "#555",
+                      letterSpacing: "1.5px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {p.weekDone}/{p.weekTotal} TASKS THIS WEEK
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* Bottom sheet */}
@@ -441,10 +385,7 @@ export function HomeClient({
             )}
             {sheet.mode === "rowActions" && (
               <div>
-                <p
-                  className="font-mono text-[10px] tracking-[3px] mb-4"
-                  style={{ color: "#555" }}
-                >
+                <p className="font-mono text-[10px] tracking-[3px] mb-4" style={{ color: "#555" }}>
                   {sheet.project.name}
                 </p>
                 <button
@@ -487,16 +428,10 @@ export function HomeClient({
             )}
             {sheet.mode === "confirmRemove" && (
               <div>
-                <p
-                  className="font-impact mb-2"
-                  style={{ fontSize: 20, color: "#F0F0F0", letterSpacing: "1px" }}
-                >
+                <p className="font-impact mb-2" style={{ fontSize: 20, color: "#F0F0F0", letterSpacing: "1px" }}>
                   REMOVE {sheet.project.name}?
                 </p>
-                <p
-                  className="font-mono text-[11px] mb-5"
-                  style={{ color: "#555" }}
-                >
+                <p className="font-mono text-[11px] mb-5" style={{ color: "#555" }}>
                   This deletes all its tasks.
                 </p>
                 <div className="flex gap-2">
@@ -557,17 +492,11 @@ function ProjectForm({
 
   return (
     <div>
-      <p
-        className="font-mono text-[10px] tracking-[3px] mb-4"
-        style={{ color: "#555" }}
-      >
+      <p className="font-mono text-[10px] tracking-[3px] mb-4" style={{ color: "#555" }}>
         {title}
       </p>
 
-      <label
-        className="font-mono text-[9px] tracking-[2px] block mb-1"
-        style={{ color: "#555" }}
-      >
+      <label className="font-mono text-[9px] tracking-[2px] block mb-1" style={{ color: "#555" }}>
         PROJECT NAME
       </label>
       <input
@@ -585,10 +514,7 @@ function ProjectForm({
         }}
       />
 
-      <label
-        className="font-mono text-[9px] tracking-[2px] block mb-2"
-        style={{ color: "#555" }}
-      >
+      <label className="font-mono text-[9px] tracking-[2px] block mb-2" style={{ color: "#555" }}>
         STATUS
       </label>
       <div className="flex gap-2 mb-5">
@@ -612,10 +538,7 @@ function ProjectForm({
         })}
       </div>
 
-      <label
-        className="font-mono text-[9px] tracking-[2px] block mb-2"
-        style={{ color: "#555" }}
-      >
+      <label className="font-mono text-[9px] tracking-[2px] block mb-2" style={{ color: "#555" }}>
         COLOR
       </label>
       <div className="flex gap-3 mb-6">

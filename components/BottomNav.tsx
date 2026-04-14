@@ -9,8 +9,8 @@ const leftItems = [
 ];
 
 const rightItems = [
-  { href: "/milestones", label: "MILES" },
-  { href: "/blockers", label: "BLOCKERS" },
+  { href: "/timeline", label: "TIMELINE" },
+  { href: "/notes", label: "NOTES" },
 ];
 
 export function BottomNav() {
@@ -41,7 +41,7 @@ export function BottomNav() {
         <span
           className="font-mono text-[9px] uppercase"
           style={{
-            color: active ? "#E8FF47" : "#555555",
+            color: active ? "#E8FF47" : "#444444",
             letterSpacing: "3px",
           }}
         >
@@ -63,7 +63,7 @@ export function BottomNav() {
     >
       {leftItems.map(renderItem)}
 
-      {/* Center OS button */}
+      {/* Center OS button — volt yellow rounded square, elevated */}
       <div className="flex-1 flex items-center justify-center" style={{ overflow: "visible" }}>
         <button
           onClick={() => {
@@ -74,7 +74,7 @@ export function BottomNav() {
             width: 56,
             height: 56,
             borderRadius: 16,
-            background: "#F0F0F0",
+            background: "#E8FF47",
             color: "#080808",
             border: "none",
             cursor: "pointer",
@@ -85,7 +85,7 @@ export function BottomNav() {
             alignItems: "center",
             justifyContent: "center",
             transform: "translateY(-12px)",
-            boxShadow: "0 -4px 16px rgba(255,255,255,0.08)",
+            boxShadow: "0 -4px 16px rgba(232,255,71,0.25)",
             WebkitTapHighlightColor: "transparent",
           }}
         >

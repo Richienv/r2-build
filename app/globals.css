@@ -30,7 +30,11 @@ button { font-family: inherit; }
 }
 
 .font-mono {
-  font-family: "SF Mono", "Courier New", monospace;
+  font-family: var(--font-dm-mono), "SF Mono", "Courier New", monospace;
+}
+
+.font-sans {
+  font-family: var(--font-dm-sans), -apple-system, "SF Pro Text", system-ui, sans-serif;
 }
 
 @keyframes strike {

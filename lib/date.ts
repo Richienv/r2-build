@@ -7,6 +7,25 @@ export function todayCST(): string {
   return `${y}-${m}-${d}`;
 }
 
+function ymd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function weekRangeCST(): { start: string; end: string } {
+  const now = new Date();
+  const cst = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Shanghai" }));
+  const dayOfWeek = cst.getDay();
+  const offsetToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(cst);
+  monday.setDate(cst.getDate() + offsetToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return { start: ymd(monday), end: ymd(sunday) };
+}
+
 export function formatHeaderDate(date = new Date()): string {
   const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
