@@ -23,10 +23,13 @@ type Section = {
 type Note = {
   id: string;
   title: string;
+  updatedAt: string;
   sections: Section[];
 };
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+type SaveStatus = "idle" | "saving" | "saved" | "error" | "unsaved";
+
+const draftKey = (id: string) => `note_draft_${id}`;
 
 const SAVE_DEBOUNCE_MS = 800;
 const SAVED_FADE_MS = 2000;
@@ -34,13 +37,37 @@ const UNDO_TOAST_MS = 5000;
 
 export function NoteDetailClient({ note: initialNote }: { note: Note }) {
   const router = useRouter();
-  const [note, setNote] = useState<Note>(initialNote);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+  const [{ note: hydratedNote, recovered }] = useState(() => {
+    if (typeof window === "undefined") {
+      return { note: initialNote, recovered: false };
+    }
+    try {
+      const raw = window.localStorage.getItem(draftKey(initialNote.id));
+      if (!raw) return { note: initialNote, recovered: false };
+      const parsed = JSON.parse(raw) as Note & { savedAt?: string };
+      const draftTime = parsed.savedAt ? Date.parse(parsed.savedAt) : 0;
+      const dbTime = Date.parse(initialNote.updatedAt) || 0;
+      if (draftTime > dbTime && parsed.id === initialNote.id) {
+        return { note: { ...parsed, updatedAt: initialNote.updatedAt }, recovered: true };
+      }
+      window.localStorage.removeItem(draftKey(initialNote.id));
+      return { note: initialNote, recovered: false };
+    } catch {
+      return { note: initialNote, recovered: false };
+    }
+  });
+
+  const [note, setNote] = useState<Note>(hydratedNote);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>(
+    recovered ? "unsaved" : "idle",
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [undoToast, setUndoToast] = useState<{ section: Section } | null>(null);
 
   const noteRef = useRef(note);
   noteRef.current = note;
+  const recoveredRef = useRef(recovered);
 
   const dirtyTitleRef = useRef(false);
   const dirtySectionsRef = useRef<Set<string>>(new Set());
@@ -96,6 +123,15 @@ export function NoteDetailClient({ note: initialNote }: { note: Note }) {
       const results = await Promise.all(jobs);
       const ok = results.every((r) => r.ok);
       if (!ok) throw new Error("save failed");
+      if (
+        dirtyTitleRef.current === false &&
+        dirtySectionsRef.current.size === 0 &&
+        pendingCreatesRef.current.size === 0
+      ) {
+        try {
+          window.localStorage.removeItem(draftKey(current.id));
+        } catch {}
+      }
       setSaveStatus("saved");
       if (savedFadeTimerRef.current) clearTimeout(savedFadeTimerRef.current);
       savedFadeTimerRef.current = setTimeout(() => {
@@ -124,24 +160,110 @@ export function NoteDetailClient({ note: initialNote }: { note: Note }) {
   }, [flush]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (
+    if (typeof window === "undefined") return;
+    try {
+      const draft = {
+        ...note,
+        savedAt: new Date().toISOString(),
+      };
+      window.localStorage.setItem(draftKey(note.id), JSON.stringify(draft));
+    } catch {}
+  }, [note]);
+
+  useEffect(() => {
+    const beaconSave = () => {
+      const current = noteRef.current;
+      const hasPending =
         dirtyTitleRef.current ||
         dirtySectionsRef.current.size > 0 ||
-        pendingCreatesRef.current.size > 0
-      ) {
+        pendingCreatesRef.current.size > 0;
+      if (!hasPending) return;
+      const body = JSON.stringify({
+        title: current.title,
+        sections: current.sections.map((s) => ({
+          id: s.id,
+          heading: s.heading,
+          content: s.content,
+          order: s.order,
+          collapsed: s.collapsed,
+        })),
+      });
+      try {
+        const blob = new Blob([body], { type: "application/json" });
+        navigator.sendBeacon(`/api/notes/${current.id}/save`, blob);
+      } catch {
         void flush();
       }
     };
+
+    const handleBeforeUnload = () => beaconSave();
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") beaconSave();
+    };
     window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       if (savedFadeTimerRef.current) clearTimeout(savedFadeTimerRef.current);
       if (undoToastTimerRef.current) clearTimeout(undoToastTimerRef.current);
       void flush();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!recoveredRef.current) return;
+    recoveredRef.current = false;
+    const current = noteRef.current;
+    setSaveStatus("saving");
+    (async () => {
+      try {
+        const res = await fetch(`/api/notes/${current.id}/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: current.title,
+            sections: current.sections.map((s) => ({
+              id: s.id,
+              heading: s.heading,
+              content: s.content,
+              order: s.order,
+              collapsed: s.collapsed,
+            })),
+          }),
+        });
+        if (!res.ok) throw new Error("recover save failed");
+        const json = (await res.json()) as {
+          sections: { clientId: string; id: string }[];
+        };
+        const idMap = new Map(json.sections.map((s) => [s.clientId, s.id]));
+        setNote((n) => ({
+          ...n,
+          sections: n.sections.map((s) => {
+            const real = idMap.get(s.id);
+            if (!real || real === s.id) return s;
+            const oldRef = textareaRefsRef.current[s.id];
+            if (oldRef) {
+              textareaRefsRef.current[real] = oldRef;
+              delete textareaRefsRef.current[s.id];
+            }
+            return { ...s, id: real };
+          }),
+        }));
+        try {
+          window.localStorage.removeItem(draftKey(current.id));
+        } catch {}
+        dirtyTitleRef.current = false;
+        dirtySectionsRef.current.clear();
+        setSaveStatus("saved");
+        if (savedFadeTimerRef.current) clearTimeout(savedFadeTimerRef.current);
+        savedFadeTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_FADE_MS);
+      } catch {
+        setSaveStatus("error");
+      }
+    })();
   }, []);
 
   const updateTitle = useCallback(
@@ -628,6 +750,8 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
         return "saved ✓";
       case "error":
         return "⚠ not saved";
+      case "unsaved":
+        return "● DRAFT";
       default:
         return "";
     }
@@ -636,7 +760,13 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
   if (status === "idle") return <span style={{ width: 56 }} />;
 
   const color =
-    status === "error" ? "#FF4747" : status === "saved" ? "#E8FF47" : "#666";
+    status === "error"
+      ? "#FF4747"
+      : status === "saved"
+        ? "#E8FF47"
+        : status === "unsaved"
+          ? "#E8FF47"
+          : "#666";
 
   return (
     <span

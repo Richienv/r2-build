@@ -23,6 +23,7 @@ export default async function NoteDetailPage({
         note={{
           id: note.id,
           title: note.title,
+          updatedAt: note.updatedAt.toISOString(),
           sections: note.sections.map((s) => ({
             id: s.id,
             heading: s.heading,
