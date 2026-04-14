@@ -4,26 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const leftItems = [
-  { href: "/", label: "HOME" },
-  { href: "/tasks", label: "TASKS" },
+  { href: "/", label: "HOME", icon: "🏠" },
+  { href: "/tasks", label: "TASKS", icon: "✅" },
 ];
 
 const rightItems = [
-  { href: "/timeline", label: "TIMELINE" },
-  { href: "/notes", label: "NOTES" },
+  { href: "/timeline", label: "TIMELINE", icon: "📅" },
+  { href: "/notes", label: "NOTES", icon: "📝" },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
 
-  const renderItem = (item: { href: string; label: string }) => {
+  const renderItem = (item: { href: string; label: string; icon: string }) => {
     const active = pathname === item.href;
     return (
       <Link
         key={item.href}
         href={item.href}
-        className="flex-1 flex items-center justify-center btn-press relative"
-        style={{ height: "100%" }}
+        className="flex-1 flex flex-col items-center justify-center btn-press relative"
+        style={{ height: "100%", gap: 4 }}
       >
         {active && (
           <span
@@ -39,10 +39,21 @@ export function BottomNav() {
           />
         )}
         <span
+          aria-hidden
+          style={{
+            fontSize: 20,
+            lineHeight: 1,
+            filter: active ? "none" : "grayscale(1) opacity(0.55)",
+            transition: "filter 150ms ease",
+          }}
+        >
+          {item.icon}
+        </span>
+        <span
           className="font-mono text-[9px] uppercase"
           style={{
             color: active ? "#E8FF47" : "#444444",
-            letterSpacing: "3px",
+            letterSpacing: "2px",
           }}
         >
           {item.label}
