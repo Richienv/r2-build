@@ -15,10 +15,12 @@ export async function OPTIONS() {
 
 export async function GET() {
   try {
-    const [projects, pendingTasks] = await Promise.all([
+    const [projects, pendingTaskCount, pendingFocusCount] = await Promise.all([
       prisma.project.findMany({ where: { status: { not: 'DONE' } } }),
       prisma.task.count({ where: { completed: false } }),
+      prisma.dailyFocus.count({ where: { completed: false } }),
     ])
+    const pendingTasks = pendingTaskCount + pendingFocusCount
 
     const summary = {
       metric: projects.length.toString(),
