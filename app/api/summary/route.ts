@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { todayCST } from '@/lib/date'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,21 +15,18 @@ export async function OPTIONS() {
 
 export async function GET() {
   try {
-    const today = todayCST()
-    const focuses = await prisma.dailyFocus.findMany({
-      where: { date: today },
-    })
-
-    const total = focuses.length
-    const done = focuses.filter((f) => f.completed).length
+    const [projects, pendingTasks] = await Promise.all([
+      prisma.project.findMany({ where: { status: { not: 'DONE' } } }),
+      prisma.task.count({ where: { completed: false } }),
+    ])
 
     const summary = {
-      metric: `${done}/${total}`,
-      unit: 'TASKS',
-      label: done === total && total > 0 ? 'all done! 🔥' : 'done today',
-      alert: total > 0 && done === 0,
-      alertMessage: total === 0 ? 'no tasks set yet' : '',
-      urgency: total > 0 && done === 0 ? 'warning' : 'info',
+      metric: projects.length.toString(),
+      unit: 'PROJECTS',
+      label: `${pendingTasks} tasks pending`,
+      alert: false,
+      alertMessage: '',
+      urgency: 'info',
     }
 
     return NextResponse.json(summary, { headers: corsHeaders })
