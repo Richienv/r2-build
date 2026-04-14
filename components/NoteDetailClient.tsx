@@ -168,7 +168,21 @@ export function NoteDetailClient({ note: initialNote }: { note: Note }) {
       };
       window.localStorage.setItem(draftKey(note.id), JSON.stringify(draft));
     } catch {}
+    const els = document.querySelectorAll<HTMLTextAreaElement>("textarea[data-autogrow]");
+    els.forEach((el) => {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    });
   }, [note]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   useEffect(() => {
     const beaconSave = () => {
@@ -605,7 +619,7 @@ export function NoteDetailClient({ note: initialNote }: { note: Note }) {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar" style={{ paddingBottom: 80 }}>
+      <div className="flex-1 overflow-y-auto no-scrollbar" style={{ paddingBottom: 120 }}>
         <div style={{ padding: "24px 20px" }}>
           <EditableTitle value={note.title} onChange={updateTitle} />
 
@@ -1117,10 +1131,11 @@ const NoteSectionRow = memo(function NoteSectionRow({
         </button>
       )}
 
-      <div style={{ display: collapsed ? "none" : "block" }}>
+      <div style={{ display: collapsed ? "none" : "block", overflow: "visible" }}>
         {useDefaultValue ? (
           <textarea
             ref={setRef}
+            data-autogrow=""
             defaultValue={content}
             onInput={handleContentInputUncontrolled}
             onKeyDown={handleKeyDown}
@@ -1133,12 +1148,17 @@ const NoteSectionRow = memo(function NoteSectionRow({
               marginTop: 8,
               paddingLeft: 20,
               resize: "none",
-              minHeight: 32,
+              overflow: "hidden",
+              minHeight: 80,
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+              whiteSpace: "pre-wrap",
             }}
           />
         ) : (
           <textarea
             ref={setRef}
+            data-autogrow=""
             value={content}
             onChange={handleContentInput}
             onKeyDown={handleKeyDown}
@@ -1151,7 +1171,11 @@ const NoteSectionRow = memo(function NoteSectionRow({
               marginTop: 8,
               paddingLeft: 20,
               resize: "none",
-              minHeight: 32,
+              overflow: "hidden",
+              minHeight: 80,
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+              whiteSpace: "pre-wrap",
             }}
           />
         )}
