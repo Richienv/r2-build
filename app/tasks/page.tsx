@@ -10,7 +10,7 @@ export default async function TasksPage() {
 
   const [tasks, projects] = await Promise.all([
     prisma.task.findMany({
-      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ dueDate: "asc" }, { dueTime: "asc" }, { createdAt: "desc" }],
     }),
     prisma.project.findMany({ orderBy: { order: "asc" } }),
   ]);
@@ -23,6 +23,8 @@ export default async function TasksPage() {
           title: t.title,
           projectKey: t.projectKey,
           dueDate: t.dueDate,
+          dueTime: t.dueTime,
+          estimatedMinutes: t.estimatedMinutes,
           priority: t.priority,
           completed: t.completed,
         }))}

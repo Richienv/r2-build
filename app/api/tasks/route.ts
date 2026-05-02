@@ -12,11 +12,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { title, projectKey, dueDate, priority } = body as {
+  const { title, projectKey, dueDate, dueTime, estimatedMinutes, priority } = body as {
     title: string;
     projectKey: string | null;
     dueDate: string;
-    priority: string;
+    dueTime?: string | null;
+    estimatedMinutes?: number | null;
+    priority?: string;
   };
 
   if (!title?.trim() || !dueDate) {
@@ -28,6 +30,8 @@ export async function POST(req: NextRequest) {
       title: title.trim(),
       projectKey: projectKey ?? null,
       dueDate,
+      dueTime: dueTime ?? null,
+      estimatedMinutes: estimatedMinutes ?? null,
       priority: priority || "MEDIUM",
     },
   });
@@ -36,14 +40,17 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
-  const { id, title, projectKey, dueDate, priority, completed } = body as {
-    id: string;
-    title?: string;
-    projectKey?: string | null;
-    dueDate?: string;
-    priority?: string;
-    completed?: boolean;
-  };
+  const { id, title, projectKey, dueDate, dueTime, estimatedMinutes, priority, completed } =
+    body as {
+      id: string;
+      title?: string;
+      projectKey?: string | null;
+      dueDate?: string;
+      dueTime?: string | null;
+      estimatedMinutes?: number | null;
+      priority?: string;
+      completed?: boolean;
+    };
 
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
@@ -51,6 +58,8 @@ export async function PATCH(req: NextRequest) {
   if (title !== undefined) data.title = title;
   if (projectKey !== undefined) data.projectKey = projectKey;
   if (dueDate !== undefined) data.dueDate = dueDate;
+  if (dueTime !== undefined) data.dueTime = dueTime;
+  if (estimatedMinutes !== undefined) data.estimatedMinutes = estimatedMinutes;
   if (priority !== undefined) data.priority = priority;
   if (completed !== undefined) {
     data.completed = completed;

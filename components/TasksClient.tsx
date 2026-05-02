@@ -3,19 +3,20 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AddTaskForm, NewTaskInput } from "@/components/AddTaskForm";
 
 type Task = {
   id: string;
   title: string;
   projectKey: string | null;
   dueDate: string;
+  dueTime: string | null;
+  estimatedMinutes: number | null;
   priority: string;
   completed: boolean;
 };
 
 type ProjectOpt = { name: string; color: string };
-
-const PRIORITIES = ["LOW", "MEDIUM", "HIGH"] as const;
 
 function formatDueLabel(dueDate: string, today: string): string {
   if (dueDate === today) return "TODAY";
@@ -28,6 +29,14 @@ function formatDueLabel(dueDate: string, today: string): string {
   const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const [, m, day] = dueDate.split("-");
   return `${months[parseInt(m, 10) - 1]} ${parseInt(day, 10)}`;
+}
+
+function formatEstimate(minutes: number | null): string {
+  if (!minutes) return "";
+  if (minutes < 60) return `${minutes}M`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h}H` : `${h}H${m}`;
 }
 
 export function TasksClient({
@@ -70,16 +79,11 @@ export function TasksClient({
     });
   }
 
-  async function createTask(
-    title: string,
-    projectKey: string | null,
-    dueDate: string,
-    priority: string,
-  ) {
+  async function createTask(input: NewTaskInput) {
     await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, projectKey, dueDate, priority }),
+      body: JSON.stringify(input),
     });
     setShowAdd(false);
     router.refresh();
@@ -267,11 +271,14 @@ export function TasksClient({
               background: "#111",
               borderTop: "1px solid #2a2a2a",
               padding: "24px 20px 32px",
+              maxHeight: "85vh",
+              overflowY: "auto",
             }}
           >
             <AddTaskForm
               projects={projects}
               today={today}
+              defaultProject={filter !== "ALL" ? filter : undefined}
               onCancel={() => setShowAdd(false)}
               onSubmit={createTask}
             />
@@ -347,8 +354,7 @@ function TaskRow({
 }) {
   const due = formatDueLabel(task.dueDate, today);
   const late = task.dueDate < today && !task.completed;
-  const priorityColor =
-    task.priority === "HIGH" ? "#FF4778" : task.priority === "LOW" ? "#555" : "#F0F0F0";
+  const estimate = formatEstimate(task.estimatedMinutes);
 
   return (
     <div
@@ -401,24 +407,30 @@ function TaskRow({
           {task.title}
         </p>
         <div className="flex items-center gap-2 mt-0.5">
-          <span
-            style={{
-              width: 4,
-              height: 4,
-              borderRadius: 2,
-              background: priorityColor,
-            }}
-          />
-          <span
-            className="font-mono"
-            style={{
-              fontSize: 9,
-              color: "#444",
-              letterSpacing: "1.5px",
-            }}
-          >
-            {task.priority}
-          </span>
+          {task.dueTime && (
+            <span
+              className="font-mono"
+              style={{
+                fontSize: 9,
+                color: "#666",
+                letterSpacing: "1px",
+              }}
+            >
+              {task.dueTime}
+            </span>
+          )}
+          {estimate && (
+            <span
+              className="font-mono"
+              style={{
+                fontSize: 9,
+                color: "#444",
+                letterSpacing: "1.5px",
+              }}
+            >
+              {estimate}
+            </span>
+          )}
         </div>
       </div>
 
@@ -445,154 +457,6 @@ function TaskRow({
           }}
         >
           ✕
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function AddTaskForm({
-  projects,
-  today,
-  onCancel,
-  onSubmit,
-}: {
-  projects: ProjectOpt[];
-  today: string;
-  onCancel: () => void;
-  onSubmit: (title: string, projectKey: string | null, dueDate: string, priority: string) => void;
-}) {
-  const [title, setTitle] = useState("");
-  const [projectKey, setProjectKey] = useState<string | null>(projects[0]?.name ?? null);
-  const [dueDate, setDueDate] = useState(today);
-  const [priority, setPriority] = useState<string>("MEDIUM");
-
-  return (
-    <div>
-      <p className="font-mono text-[10px] tracking-[3px] mb-4" style={{ color: "#555" }}>
-        NEW TASK
-      </p>
-
-      <label className="font-mono text-[9px] tracking-[2px] block mb-1" style={{ color: "#555" }}>
-        TASK
-      </label>
-      <input
-        autoFocus
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="What needs doing?"
-        className="w-full bg-transparent outline-none font-sans mb-5"
-        style={{
-          fontSize: 18,
-          fontWeight: 500,
-          color: "#F0F0F0",
-          borderBottom: "1px solid #2a2a2a",
-          paddingBottom: 6,
-        }}
-      />
-
-      <label className="font-mono text-[9px] tracking-[2px] block mb-2" style={{ color: "#555" }}>
-        PROJECT
-      </label>
-      <div className="flex gap-2 mb-5 flex-wrap">
-        {projects.map((p) => {
-          const active = projectKey === p.name;
-          return (
-            <button
-              key={p.name}
-              onClick={() => setProjectKey(p.name)}
-              className="btn-press font-mono text-[9px] tracking-[2px] px-3"
-              style={{
-                height: 32,
-                color: active ? "#080808" : "#555",
-                background: active ? "#E8FF47" : "transparent",
-                border: `1px solid ${active ? "#E8FF47" : "#2a2a2a"}`,
-              }}
-            >
-              {p.name}
-            </button>
-          );
-        })}
-        <button
-          onClick={() => setProjectKey(null)}
-          className="btn-press font-mono text-[9px] tracking-[2px] px-3"
-          style={{
-            height: 32,
-            color: projectKey === null ? "#080808" : "#555",
-            background: projectKey === null ? "#E8FF47" : "transparent",
-            border: `1px solid ${projectKey === null ? "#E8FF47" : "#2a2a2a"}`,
-          }}
-        >
-          NONE
-        </button>
-      </div>
-
-      <label className="font-mono text-[9px] tracking-[2px] block mb-2" style={{ color: "#555" }}>
-        DUE DATE
-      </label>
-      <input
-        type="date"
-        value={dueDate}
-        onChange={(e) => setDueDate(e.target.value)}
-        className="w-full bg-transparent outline-none font-mono mb-5"
-        style={{
-          fontSize: 14,
-          color: "#F0F0F0",
-          borderBottom: "1px solid #2a2a2a",
-          paddingBottom: 6,
-          colorScheme: "dark",
-        }}
-      />
-
-      <label className="font-mono text-[9px] tracking-[2px] block mb-2" style={{ color: "#555" }}>
-        PRIORITY
-      </label>
-      <div className="flex gap-2 mb-6">
-        {PRIORITIES.map((p) => {
-          const active = priority === p;
-          return (
-            <button
-              key={p}
-              onClick={() => setPriority(p)}
-              className="btn-press font-mono text-[9px] tracking-[2px] px-3"
-              style={{
-                height: 32,
-                color: active ? "#080808" : "#555",
-                background: active ? "#E8FF47" : "transparent",
-                border: `1px solid ${active ? "#E8FF47" : "#2a2a2a"}`,
-              }}
-            >
-              {p}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          onClick={onCancel}
-          className="flex-1 btn-press font-mono text-[11px] tracking-[3px]"
-          style={{
-            height: 48,
-            color: "#555",
-            background: "transparent",
-            border: "1px solid #2a2a2a",
-          }}
-        >
-          CANCEL
-        </button>
-        <button
-          onClick={() => title.trim() && onSubmit(title.trim(), projectKey, dueDate, priority)}
-          disabled={!title.trim()}
-          className="flex-1 btn-press font-mono text-[11px] tracking-[3px]"
-          style={{
-            height: 48,
-            color: title.trim() ? "#080808" : "#555",
-            background: title.trim() ? "#E8FF47" : "transparent",
-            border: `1px solid ${title.trim() ? "#E8FF47" : "#2a2a2a"}`,
-          }}
-        >
-          ADD TASK
         </button>
       </div>
     </div>

@@ -80,15 +80,17 @@ model Blocker {
 }
 
 model Task {
-  id          String    @id @default(cuid())
-  title       String
-  projectKey  String?
-  dueDate     String
-  priority    String    @default("MEDIUM")
-  completed   Boolean   @default(false)
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  title            String
+  projectKey       String?
+  dueDate          String
+  dueTime          String?
+  estimatedMinutes Int?
+  priority         String    @default("MEDIUM")
+  completed        Boolean   @default(false)
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   @@index([projectKey])
   @@index([dueDate])
